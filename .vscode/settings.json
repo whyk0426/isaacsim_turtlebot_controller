@@ -1,0 +1,23 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/yk/ros2_ws/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/turtlebot3_example/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/turtlebot3_msgs/local/lib/python3.10/dist-packages",
+        "/home/yk/ros2_ws/install/isaacsim_map_merging/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/dynamixel_sdk_custom_interfaces/local/lib/python3.10/dist-packages",
+        "/home/yk/ros2_ws/install/capstone_map_merging/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/yk/ros2_ws/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/turtlebot3_example/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/turtlebot3_msgs/local/lib/python3.10/dist-packages",
+        "/home/yk/ros2_ws/install/isaacsim_map_merging/lib/python3.10/site-packages",
+        "/home/yk/ros2_ws/install/dynamixel_sdk_custom_interfaces/local/lib/python3.10/dist-packages",
+        "/home/yk/ros2_ws/install/capstone_map_merging/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "C_Cpp.errorSquiggles": "disabled"
+}
