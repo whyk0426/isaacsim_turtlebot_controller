@@ -11,11 +11,11 @@ std::array<double, 2> DynamicWindowApproach::optimal_velocity(){
     v_min = v0 - v_acc * dt;
     if (v_min < 0) v_min = 0;
     v_max = v0 + v_acc * dt;
-    if (v_max > 0.22) v_max = 0.22;
+    if (v_max > max_linear) v_max = max_linear;
     w_min = w0 - w_acc * dt;
-    if (w_min < -1.0) w_min = -1.0;
+    if (w_min < - max_angular) w_min = - max_angular;
     w_max = w0 + w_acc * dt;
-    if (w_max > 1.0) w_max = 1.0;
+    if (w_max > max_angular) w_max = max_angular;
 
     double min_cost = std::numeric_limits<double>::max();
     for (double w = w_min; w < w_max; w += w_res){
@@ -44,15 +44,17 @@ double DynamicWindowApproach::cost_calculator(double v, double w){
         x = (w==0) ? (x0 + v * sin(theta0) * t) : (x0 + (v/w) * (sin(theta0 + w * t) - sin(theta0)));
         y = (w==0) ? (y0 + v * cos(theta0) * t) : (y0 - (v/w) * (cos(theta0 + w * t) - cos(theta0)));
 
-        if (cost_obs(x, y) > obstacle_cost)
-            obstacle_cost = cost_obs(x, y);
+        double obs_cost = cost_obs(x, y);
+        if (obs_cost > obstacle_cost)
+            obstacle_cost = obs_cost;
 
         x0 = x;
         y0 = y;
         theta0 = theta;
     }
-    
-    return ((goal_weight * cost_goal(x, y))+(obs_weight * cost_obs(x, y))+(vel_weight * cost_vel(v)));
+    // RCLCPP_INFO(rclcpp::get_logger("DWA"), "goal: %.3f, obs:%.3f, vel:%.3f angle: %.3f", (goal_weight * cost_goal(x, y)), (obs_weight * obstacle_cost), (vel_weight * cost_vel(v)), (angle_weight * cost_angle(x, y, theta)));
+
+    return ((goal_weight * cost_goal(x, y))+(obs_weight * obstacle_cost)+(vel_weight * cost_vel(v)));
 }
 
 double DynamicWindowApproach::cost_goal(double x, double y){
@@ -63,49 +65,49 @@ double DynamicWindowApproach::cost_goal(double x, double y){
 }
 
 double DynamicWindowApproach::cost_obs(double x, double y){
-    double x_diff = (obs_x - x);
-    double y_diff = (obs_y - y);
+    int width = map.info.width;
+    int height = map.info.height;
+    double origin_x = map.info.origin.position.x;
+    double origin_y = map.info.origin.position.y;
+    double resolution = map.info.resolution;
 
-    return sqrt(x_diff * x_diff + y_diff * y_diff);
+    double closest_obstacle = std::numeric_limits<double>::max();
+
+    for (int b = 0; b < height; b++){
+        for (int a = 0; a < width; a++){
+            int index = a + b * width;
+
+            if (map.data[index] > 50){
+                double x_diff = (origin_x + a * resolution) - x;
+                double y_diff = (origin_y + b * resolution) - y;
+                double obstacle_distance = sqrt(x_diff * x_diff + y_diff * y_diff);
+
+                if (obstacle_distance < closest_obstacle)
+                    closest_obstacle = obstacle_distance;
+            }
+        }
+    } 
+    if (closest_obstacle < safety_radius)
+        return std::numeric_limits<double>::max();
+
+    return (closest_obstacle < max_obs) ? (1.0 / closest_obstacle) : 0;
 }
 
 double DynamicWindowApproach::cost_vel(double vel){
-    return (0.22 - vel);
+    return (max_linear - vel);
 }
 
-// void IsaacsimTurtlebotController::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg){
-//     if (!tf_flag)
-//         return;
+// double DynamicWindowApproach::cost_angle(double x, double y, double th){
+//     double goal_th = atan2((goal_y - x), (goal_x - y));
+//     double error_th = goal_th - th;
 
-//     double angle_min = msg->angle_min;
-//     double angle_increment = msg->angle_increment;
-//     scan_flag = true;
+//     if (error_th > (2 * M_PI))
+//         error_th = error_th - 2 * M_PI;
+//     else if (error_th < (- 2 * M_PI))
+//         error_th =  error_th + 2 * M_PI;
 
-//     size_t num_points = msg->ranges.size();
-//     // for (size_t i = 0; i < num_points; i++){
-//     //     double angle_rad = angle_min + i * angle_increment;
-//     //     int angle_deg = static_cast<int>(std::round(angle_rad * 180.0 / M_PI));
+//     goal_inside = (abs(error_th) < 0.5 * M_PI) ? true : false;
 
-//     //     int index = (angle_deg + 360) % 360;
-//     //     lidar_distance[index] = msg->ranges[i];
-//     // }
-//     for (size_t i = 0; i < num_points; i++){
-//         lidar_distance[i] = msg->ranges[i];
-//     }
-//     RCLCPP_INFO(this->get_logger(), "r=%.2f", lidar_distance[0]);
-//     double closest_range = 1.0; //2초 후에 미래까지 봄. 0.22m/s로 2s 동안 가면 0.44m x2는 1.0m 정도. 다음 스텝까지도 예측에 영향을 안줌/
-//     int closest_deg = 0;
-
-//     for (int j = -90; j < 91; j++){
-//         if (lidar_distance[j] < closest_range){
-//             closest_range = lidar_distance[j];
-//             closest_deg = j;
-//             obs_flag = true;
-//         }
-//     }
-//     double closest_rad = closest_deg * M_PI / 180.0; 
-
-//     // world좌표계에서 장애물 좌표
-//     obs_x = closest_range * (cos(real_th)*cos(closest_rad) - sin(real_th)*sin(closest_rad)) + real_x;
-//     obs_y = closest_range * (sin(real_th)*cos(closest_rad) + cos(real_th)*sin(closest_rad)) + real_y;
+//     return error_th;
 // }
+
