@@ -23,6 +23,8 @@ class IsaacsimTurtlebotController : public rclcpp::Node{
         void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
         void goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
+        std::string robot_name;
+
         bool tf_flag = false, goal_flag = false, map_flag = false;
 
         double goal_x = 0.0, goal_y = 0.0;

@@ -6,12 +6,20 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='isaacsim_turtlebot_controller',
-            # namespace='Lima',
+            namespace='Lima',
             executable='isaac_tb3_controller',
             output='screen',
-            # parameters=[{'robot_name': 'Lima',
-            #              'scan_name' : '/Lima/scan',
-            #              }]
+            parameters=[{'robot_name': 'Lima',
+                         }]
         ),
+
+        # Node(
+        #     package='isaacsim_turtlebot_controller',
+        #     namespace='Alpha',
+        #     executable='isaac_tb3_controller',
+        #     output='screen',
+        #     parameters=[{'robot_name': 'Alpha',
+        #                  }]
+        # ),
 
     ])

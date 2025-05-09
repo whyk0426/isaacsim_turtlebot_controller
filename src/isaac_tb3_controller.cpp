@@ -4,13 +4,17 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 
 IsaacsimTurtlebotController::IsaacsimTurtlebotController() : Node("isaac_tb3_controller"){
+    //parameter
+    this->declare_parameter("robot_name", "robot_name");
+    robot_name = this->get_parameter("robot_name").as_string();
+
     //subscriber
-    map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/map", 10, std::bind(&IsaacsimTurtlebotController::map_callback, this, _1));
+    map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("map", 10, std::bind(&IsaacsimTurtlebotController::map_callback, this, _1));
     goal_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_position", 10, std::bind(&IsaacsimTurtlebotController::goal_callback, this, _1));
 
     //publisher
     cmd_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-    marker_publisher = this->create_publisher<visualization_msgs::msg::Marker>("goal_marker", 10);
+    marker_publisher = this->create_publisher<visualization_msgs::msg::Marker>("/goal_marker", 10);
 
     //TF Listener
     tf_buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -64,7 +68,7 @@ void IsaacsimTurtlebotController::tf_timer_callback(){
     geometry_msgs::msg::TransformStamped t;
 
     try{
-        t = tf_buffer->lookupTransform("odom", "base_scan", tf2::TimePointZero);
+        t = tf_buffer->lookupTransform(robot_name + "_odom", robot_name + "_base_link", tf2::TimePointZero);
     }   catch (const tf2::TransformException &ex){
         RCLCPP_INFO(this->get_logger(), "Could not transform %s", ex.what());
         return;

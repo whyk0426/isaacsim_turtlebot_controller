@@ -4,7 +4,7 @@ DynamicWindowApproach::DynamicWindowApproach(){
     
 }
 
-std::array<double, 2> DynamicWindowApproach::optimal_velocity(){
+std::array<double, 2> DynamicWindowApproach::optimal_velocity(){    
     double v0 = v_opt;
     double w0 = w_opt;
 
@@ -40,9 +40,9 @@ double DynamicWindowApproach::cost_calculator(double v, double w){
     double obstacle_cost = 0;
 
     for (double t = 0.0; t < predict_time; t += dt){
-        theta = theta0 + w * t;
-        x = (w==0) ? (x0 + v * sin(theta0) * t) : (x0 + (v/w) * (sin(theta0 + w * t) - sin(theta0)));
-        y = (w==0) ? (y0 + v * cos(theta0) * t) : (y0 - (v/w) * (cos(theta0 + w * t) - cos(theta0)));
+        theta = theta0 + w * dt;
+        x = (w==0) ? (x0 + v * sin(theta0) * dt) : (x0 + (v/w) * (sin(theta0 + w * dt) - sin(theta0)));
+        y = (w==0) ? (y0 + v * cos(theta0) * dt) : (y0 - (v/w) * (cos(theta0 + w * dt) - cos(theta0)));
 
         double obs_cost = cost_obs(x, y);
         if (obs_cost > obstacle_cost)
@@ -54,7 +54,7 @@ double DynamicWindowApproach::cost_calculator(double v, double w){
     }
     // RCLCPP_INFO(rclcpp::get_logger("DWA"), "goal: %.3f, obs:%.3f, vel:%.3f angle: %.3f", (goal_weight * cost_goal(x, y)), (obs_weight * obstacle_cost), (vel_weight * cost_vel(v)), (angle_weight * cost_angle(x, y, theta)));
 
-    return ((goal_weight * cost_goal(x, y))+(obs_weight * obstacle_cost)+(vel_weight * cost_vel(v)));
+    return ((goal_weight * cost_goal(x, y))+(obs_weight * obstacle_cost)+(vel_weight * cost_vel(v))+(angle_weight * cost_angle(x, y, theta)));
 }
 
 double DynamicWindowApproach::cost_goal(double x, double y){
@@ -97,17 +97,15 @@ double DynamicWindowApproach::cost_vel(double vel){
     return (max_linear - vel);
 }
 
-// double DynamicWindowApproach::cost_angle(double x, double y, double th){
-//     double goal_th = atan2((goal_y - x), (goal_x - y));
-//     double error_th = goal_th - th;
+double DynamicWindowApproach::cost_angle(double x, double y, double th){
+    double goal_th = atan2((goal_y - y), (goal_x - x));
 
-//     if (error_th > (2 * M_PI))
-//         error_th = error_th - 2 * M_PI;
-//     else if (error_th < (- 2 * M_PI))
-//         error_th =  error_th + 2 * M_PI;
+    while (th > M_PI) th -= 2 * M_PI;
+    while (th < -M_PI) th += 2 * M_PI;
 
-//     goal_inside = (abs(error_th) < 0.5 * M_PI) ? true : false;
+    double error_th = fabs(goal_th - th);
 
-//     return error_th;
-// }
+    // RCLCPP_INFO(rclcpp::get_logger("DWA"), "goal_th: %.3f real_th: %.3f error_th: %.3f", goal_th, th, error_th);
+    return error_th;
+}
 

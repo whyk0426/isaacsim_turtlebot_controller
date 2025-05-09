@@ -21,15 +21,16 @@ class DynamicWindowApproach{
         double cost_goal(double x, double y);
         double cost_obs(double x, double y);
         double cost_vel(double vel);
-        // double cost_angle(double x, double y, double th);
+        double cost_angle(double x, double y, double th);
 
 
-        // bool goal_inside = false;
+        // double goal_weight = 1.0;
+        // double obs_weight = 0.2;
+        // double vel_weight = 3.0;
         double goal_weight = 1.0;
-        double obs_weight = 0.2;
+        double obs_weight = 0.0;
         double vel_weight = 3.0;
-        // double vel_weight = (goal_inside) ? 3.0: 0.0;
-        // double angle_weight = 1.0;
+        double angle_weight = 1.0;
 
         double max_linear = 0.22;
         double max_angular = 1.0;
