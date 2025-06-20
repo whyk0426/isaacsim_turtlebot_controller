@@ -15,31 +15,27 @@ class DynamicWindowApproach{
         nav_msgs::msg::OccupancyGrid map;
 
         std::array<double, 2> optimal_velocity();
-
+        bool arriving_flag = true;
     private:
         double cost_calculator(double v, double w);
         double cost_goal(double x, double y);
         double cost_obs(double x, double y);
         double cost_vel(double vel);
-        double cost_angle(double x, double y, double th);
+        // double cost_angle(double x, double y, double th);
 
-
-        // double goal_weight = 1.0;
-        // double obs_weight = 0.2;
-        // double vel_weight = 3.0;
-        double goal_weight = 1.0;
-        double obs_weight = 0.0;
-        double vel_weight = 3.0;
-        double angle_weight = 1.0;
+        double goal_weight = 3.0;
+        double obs_weight = 0.1; //1.0
+        double vel_weight = 0.1; //0.5
+        // double angle_weight = 0.1; //0.01
 
         double max_linear = 0.22;
         double max_angular = 1.0;
-        double max_obs = 0.44; // predict_time * max_linear * 2
+        double max_obs = 0.7; // predict_time * max_linear * 2 + safety_radius
 
         double dt = 0.1;
-        double predict_time = 1.0;
-        double v_res = 0.01;
-        double w_res = 0.1;
+        double predict_time = 1.5;  //1.5
+        double v_res = 0.02;    // 0.01
+        double w_res = 0.05;
 
         double v_opt = 0.0, w_opt = 0.0;
         double v_min = 0.0, w_min = 0.0;
@@ -47,7 +43,8 @@ class DynamicWindowApproach{
         double v_acc = 0.4;
         double w_acc = 2.0;
 
-        double safety_radius = 0.25;
+        const double safety_radius = 0.25;
+        const double EPSILON = 1e-3;
 };
 
 #endif 

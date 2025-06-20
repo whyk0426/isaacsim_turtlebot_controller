@@ -11,6 +11,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include <cmath>
 #include "dynamic_window_approach.hpp"
+#include "global_path.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
 class IsaacsimTurtlebotController : public rclcpp::Node{
@@ -22,8 +23,10 @@ class IsaacsimTurtlebotController : public rclcpp::Node{
         void cmd_timer_callback();
         void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
         void goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+        void path_marker();
 
         std::string robot_name;
+        double x_offset, y_offset, theta_offset;
 
         bool tf_flag = false, goal_flag = false, map_flag = false;
 
@@ -31,6 +34,7 @@ class IsaacsimTurtlebotController : public rclcpp::Node{
         double real_x = 0.0, real_y = 0.0, real_th = 0.0;
     
     DynamicWindowApproach dwa;
+    GlobalPath a_star;
 
     //Subscriber
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber;
