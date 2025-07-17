@@ -11,7 +11,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'robot_name': 'Lima',
                          'x_offset' : 0.0,
-                         'y_offset' : -2.0,
+                         'y_offset' : 0.0,
                          'theta_offset' : 0.0,
                          }]
         ),
@@ -22,8 +22,8 @@ def generate_launch_description():
             executable='isaac_tb3_controller',
             output='screen',
             parameters=[{'robot_name': 'Alpha',
-                         'x_offset' : -1.0,
-                         'y_offset' : 0.0,
+                         'x_offset' : -1.0,     #-1.0
+                         'y_offset' : 2.0,          #2.0
                          'theta_offset' : 0.0,
                          }]
         ),

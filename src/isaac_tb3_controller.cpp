@@ -3,8 +3,9 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
-IsaacsimTurtlebotController::IsaacsimTurtlebotController() : Node("isaac_tb3_controller"){
-    //parameter
+IsaacsimTurtlebotController::IsaacsimTurtlebotController() : Node("isaac_tb3_controller")
+{
+    // parameter
     this->declare_parameter("robot_name", "robot_name");
     robot_name = this->get_parameter("robot_name").as_string();
     this->declare_parameter("x_offset", 0.0);
@@ -14,52 +15,64 @@ IsaacsimTurtlebotController::IsaacsimTurtlebotController() : Node("isaac_tb3_con
     this->declare_parameter("theta_offset", 0.0);
     theta_offset = this->get_parameter("theta_offset").as_double();
 
-    //subscriber
+    // subscriber
+    //  merge_map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/merge_map", 10, std::bind(&IsaacsimTurtlebotController::merge_map_callback, this, _1));
     map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("map", 10, std::bind(&IsaacsimTurtlebotController::map_callback, this, _1));
     goal_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped>("goal_position", 10, std::bind(&IsaacsimTurtlebotController::goal_callback, this, _1));
 
-    //publisher
+    // publisher
     cmd_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
     marker_publisher = this->create_publisher<visualization_msgs::msg::Marker>("/goal_marker", 10);
 
-    //TF Listener
+    // TF Listener
     tf_buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 
-    //Timer 
+    // Timer
     tf_timer = this->create_wall_timer(10ms, std::bind(&IsaacsimTurtlebotController::tf_timer_callback, this));
     cmd_timer = this->create_wall_timer(100ms, std::bind(&IsaacsimTurtlebotController::cmd_timer_callback, this));
 }
+// void IsaacsimTurtlebotController::merge_map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg){
+//     dwa.map = *msg;
+//     a_star.map = *msg;
 
-void IsaacsimTurtlebotController::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg){
+//     map_flag = true;
+// }
+
+void IsaacsimTurtlebotController::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
     dwa.map = *msg;
     a_star.map = *msg;
 
     map_flag = true;
 }
 
-void IsaacsimTurtlebotController::goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+void IsaacsimTurtlebotController::goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
     goal_x = msg->pose.position.x;
     goal_y = msg->pose.position.y;
 
     goal_flag = true;
-    
-    // dwa.goal_x = goal_x * cos(theta_offset) - goal_y * sin(theta_offset) + x_offset;
-    // dwa.goal_y = goal_x * sin(theta_offset) + goal_y * cos(theta_offset) + y_offset;
 
     a_star.goal_x = goal_x * cos(theta_offset) - goal_y * sin(theta_offset) + x_offset;
     a_star.goal_y = goal_x * sin(theta_offset) + goal_y * cos(theta_offset) + y_offset;
-    
+
+    // a_star.goal_x = goal_x;
+    // a_star.goal_y = goal_y;
     RCLCPP_INFO(this->get_logger(), "Received goal: x=%.2f y=%.2f", goal_x, goal_y);
     // path_marker();
 }
 
-void IsaacsimTurtlebotController::tf_timer_callback(){
+void IsaacsimTurtlebotController::tf_timer_callback()
+{
     geometry_msgs::msg::TransformStamped t;
 
-    try{
+    try
+    {
         t = tf_buffer->lookupTransform(robot_name + "_odom", robot_name + "_base_link", tf2::TimePointZero);
-    }   catch (const tf2::TransformException &ex){
+    }
+    catch (const tf2::TransformException &ex)
+    {
         RCLCPP_INFO(this->get_logger(), "Could not transform %s", ex.what());
         return;
     }
@@ -68,7 +81,7 @@ void IsaacsimTurtlebotController::tf_timer_callback(){
 
     real_x = t.transform.translation.x;
     real_y = t.transform.translation.y;
-    real_th = 2 * atan2(z,w);
+    real_th = 2 * atan2(z, w);
 
     // RCLCPP_INFO(this->get_logger(), "Robot state: theata=%.2f", real_th);
 
@@ -85,13 +98,15 @@ void IsaacsimTurtlebotController::tf_timer_callback(){
     tf_flag = true;
 }
 
-void IsaacsimTurtlebotController::cmd_timer_callback(){
-    if ((!tf_flag)||(!goal_flag)||(!map_flag))
+void IsaacsimTurtlebotController::cmd_timer_callback()
+{
+    if ((!tf_flag) || (!goal_flag) || (!map_flag))
         return;
 
     geometry_msgs::msg::Twist cmd_vel;
 
-    if (dwa.arriving_flag){
+    if (dwa.arriving_flag)
+    {
         path_marker();
 
         dwa.goal_x = a_star.row[0][0];
@@ -105,24 +120,26 @@ void IsaacsimTurtlebotController::cmd_timer_callback(){
     cmd_vel.linear.x = dwa.optimal_velocity()[0];
     cmd_vel.angular.z = dwa.optimal_velocity()[1];
 
-    // double distance_to_goal = sqrt(((goal_x - real_x) * (goal_x - real_x)) + (goal_y - real_y) * (goal_y - real_y));
-    // if (distance_to_goal < 0.05) goal_flag = false;
+    double distance_to_goal = sqrt(((goal_x - real_x) * (goal_x - real_x)) + (goal_y - real_y) * (goal_y - real_y));
+    if (distance_to_goal < 0.05)
+        goal_flag = false;
 
     cmd_publisher->publish(cmd_vel);
 
     tf_flag = false;
 }
 
-void IsaacsimTurtlebotController::path_marker(){
+void IsaacsimTurtlebotController::path_marker()
+{
     a_star.wayPoint();
 
     visualization_msgs::msg::Marker marker;
 
-    marker.header.frame_id = "map";  
+    marker.header.frame_id = "map";
     marker.header.stamp = this->get_clock()->now();
     marker.ns = robot_name + "_goal";
     marker.id = 0;
-    marker.type = visualization_msgs::msg::Marker::SPHERE_LIST; 
+    marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.pose.orientation.w = 1.0;
     marker.scale.x = 0.1;
@@ -159,14 +176,15 @@ void IsaacsimTurtlebotController::path_marker(){
     line_marker.color = line_color;
 
     size_t n = a_star.row[0].size();
-    for(size_t i = 0; i < n; i++){
+    for (size_t i = 0; i < n; i++)
+    {
         geometry_msgs::msg::Point pt;
         pt.x = a_star.row[0][i] * cos(theta_offset) + a_star.row[1][i] * sin(theta_offset) - x_offset;
         pt.y = a_star.row[0][i] * sin(theta_offset) + a_star.row[1][i] * cos(theta_offset) - y_offset;
         pt.z = 0.2;
         marker.points.push_back(pt);
 
-        if ( i == n - 1)
+        if (i == n - 1)
             marker.colors.push_back(goal_color);
         else
             marker.colors.push_back(waypoint_color);
