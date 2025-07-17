@@ -43,7 +43,8 @@ endif()
 add_executable(isaac_tb3_controller
         src/isaac_tb3_controller.cpp
         src/isaac_tb3_controller_main.cpp
-        src/dynamic_window_approach.cpp)
+        src/dynamic_window_approach.cpp
+        src/global_path.cpp)
 ament_target_dependencies(isaac_tb3_controller ${ROS2_PACKAGES})
 install(TARGETS isaac_tb3_controller
   DESTINATION lib/${PROJECT_NAME})
